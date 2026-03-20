@@ -112,10 +112,6 @@ We split disruptions into two categories because they need to be handled differe
 - Platform outages where no orders can be placed or received
 
 A soft disruption warrants partial compensation scaled to severity. A hard disruption warrants full estimated income replacement.
-
-> **[Diagram recommended here]**
-> Two-column visual: Soft Disruptions (icons + "Work possible, income reduced" + partial income graph) vs Hard Disruptions (icons + "Work impossible, income = 0" + flat income graph). The soft/hard split is the most important conceptual distinction for a first-time reader and is worth a dedicated visual.
-
 ---
 
 ## 6. Zone-Based Architecture
@@ -125,10 +121,6 @@ The system does not track every user individually. It works at the **zone level*
 A zone is a predefined geographic unit — a locality or delivery cluster within a city. Each zone has a unique **Zone ID** pre-assigned before the system runs. All external API calls use the zone's coordinates. All severity scores and payouts flow from the Zone ID.
 
 This is a scalability decision. A city with 10,000 delivery partners across 50 zones needs 50 API calls to get environmental data — not 10,000.
-
-> **[Diagram recommended here]**
-> A stylised city map divided into labelled zones. Show one signal fetch arrow per zone (not per user). This makes the scalability argument immediately intuitive.
-
 ---
 
 ## 7. Input Signals and Data Sources
@@ -170,8 +162,6 @@ All signals are fetched every **10 minutes** per zone using a polling-based appr
 
 The 10-minute interval balances responsiveness with cost. Most disruptions evolve over 10–30 minutes — frequent enough to catch developing conditions, not so frequent that we are hammering external APIs unnecessarily. The interval is configurable and can be tightened during monsoon season or known high-risk periods.
 
-> **No diagram needed here.** The pipeline is a simple linear sequence (fetch → normalize → compute) and is clearly described in text. A diagram adds little over what the surrounding sections already explain.
-
 ---
 
 ## 9. Signal Normalization
@@ -203,8 +193,6 @@ $$platform\_uptime = false \Rightarrow score = 1$$
 *Example: Curfew imposed in Zone 042 → delivery_allowed_flag = false → score = **1** regardless of weather.*
 
 > **These thresholds are illustrative values for the prototype.** The denominators (100mm for rain, 20 km/h for wind) will be calibrated from historical income data per city — the rainfall level that hurts delivery volumes in Bengaluru will differ from Mumbai or Hyderabad.
-
-> **No diagram needed here.** These are simple scalar formulas. A visual would add clutter rather than clarity.
 
 ---
 
@@ -253,10 +241,6 @@ zone_severity = max(0.82, 0.00, 0.20, 0.15) = 0.82
 It is used as a **scaling factor in the payout formula** for soft disruptions. A severity of 0.82 means conditions were severe enough that we scale the payout to 82% of the estimated income the worker would have earned. A severity of 0.40 means conditions were moderate — the payout covers around 40% of estimated earnings.
 
 For hard disruptions (curfew, platform outage), severity is always 1 and the full estimated income is compensated — no scaling applied.
-
-> **[Diagram recommended here]**
-> Side-by-side bar chart: the same four input scores, average result labelled "misleading" vs MAX result labelled "correct." Simple bars and labels only.
-
 ---
 
 ## 11. Trigger Logic
@@ -266,8 +250,6 @@ The trigger check is a single threshold comparison:
 $$\text{if } zone\_severity \geq \theta \implies disruption\_event = TRUE$$
 
 When a disruption event fires for a zone, the system moves to find which users in that zone are eligible for a payout. The threshold $\theta$ is configurable per zone and calibrated against historical income data.
-
-> **No diagram needed here.** This is a one-line conditional. A flowchart adds no value.
 
 ---
 
@@ -291,10 +273,6 @@ When a disruption event is triggered for a zone, the system does not do a one-ti
 The GPS refresh cycle and the GEORADIUS scan are tightly coupled — both run every 10 minutes — ensuring no eligible rider who enters during an event is missed.
 
 User GPS is refreshed every 10 minutes, matching the polling cycle. There is a small positional lag trade-off — a rider who crossed a zone boundary recently might be mapped to the previous zone for up to 10 minutes — but zone boundaries are large enough that this is negligible in practice.
-
-> **[Diagram recommended here]**
-> Sequential flow: "10,000 users in city" → GEORADIUS query → "~400 in radius" → active filter → "310 online" → zone match → "287 eligible." Add a timing label (< 5ms). This makes the scalability argument concrete without requiring explanation.
-
 ---
 
 ## 13. Presence Estimation
@@ -339,9 +317,6 @@ Ravi:        presence_time = 6h,    avg_hours = 4h,   H_max = 10h
 Late entrant: presence_time = 0.1h, avg_hours = 8h,  H_max = 10h
              effective_hours = min(0.1, 8, 10) = 0.1h  ← only gets credit for time actually present
 ```
-
-> **No diagram needed here.** The three cases communicate each variable's purpose clearly on their own.
-
 ---
 
 ## 14. Payout Computation
@@ -383,10 +358,6 @@ There is no `demand_multiplier` because there was no demand at all. There is no 
 $$final\_payout = \min(remaining\_cap,\ payout)$$
 
 Cumulative weekly payouts cannot exceed the plan cap. This keeps the system financially predictable for the insurer.
-
-> **[Diagram recommended here]**
-> A branching flowchart: "Soft or Hard?" → left branch (estimate lost work → scale by severity → cap) and right branch (estimate full loss → cap). Both converge at cap enforcement. Genuinely useful for first-time readers.
-
 ---
 
 ## 15. Insurance Policy Design
@@ -486,9 +457,6 @@ $$risk\_multiplier = 1 + zone\_risk$$
 $$premium = base\_price \times risk\_multiplier$$
 
 A zone with `zone_risk = 0.8` costs 1.8× the base rate. `zone_risk = 0.1` costs 1.1×. Workers in safer zones pay less — which is fair, and creates a natural incentive for the product to expand into lower-risk areas.
-
-> **No diagram needed here.** An optional scatter plot of zone_risk vs premium multiplier could be included in a presentation deck but adds little to a written document.
-
 ---
 
 ## 17. AI Chatbot and Explainability
@@ -505,8 +473,6 @@ The chatbot surfaces the exact signals, scores, and thresholds behind every deci
 | "Am I covered right now?" | Subscription status, remaining weekly cap |
 
 The goal is for this to feel like a financial tool the worker can trust, not a black box that occasionally deposits money.
-
-> **No diagram needed here.** A screenshot of the chatbot interface is better than a flow diagram — save that for the product demo.
 
 ---
 
